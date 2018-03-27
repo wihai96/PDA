@@ -13,7 +13,6 @@ public class Producer
             }
         }
 
-        App.coada[App.count++] = value; // Produced
-        notify(); // Notify the consumers which are waiting
-    }
+        App.coada[App.count++] = value;
+        notify();
 }
