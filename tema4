@@ -1,0 +1,67 @@
+#include <stdio.h> 
+#include <stdlib.h> 
+#include <mpi.h>
+#define THREADNUMBER 3
+#define ARRAYSIZE 9
+
+using namespace std;
+
+int data[ARRAYSIZE];
+
+void main(int argc, char *argv[]) 
+{
+	int size, myrank, mysum = 0, finalSum = 0,source;
+	int nrOfElem = ARRAYSIZE / THREADNUMBER;
+	MPI_Status status;
+	MPI_Init(&argc, &argv);
+	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+
+	int lower = myrank * nrOfElem;
+	int upper = lower + nrOfElem;
+
+	if (myrank == 0)
+	{
+		for (int i = 0; i < ARRAYSIZE; ++i)
+		{
+			printf("%d out of %d left. Enter a number: ", i, ARRAYSIZE);
+			scanf("%d", d[i]);
+		}
+
+		for (int i = lower; i < upper; ++i)
+	        {
+		mysum += data[i];
+	        }
+
+		for (int i = 1; i < THREADNUMBER; ++i)
+		{
+			lower += nrOfElem;
+			MPI_Send(&data[lower], nrOfElem, MPI_INT, i, MPI_COMM_WORLD);
+			printf("Master sent elements to process %d\n", i);
+		}
+
+		for (int i = 1; i < THREADNUMBER; ++i)
+		{
+			source = i;
+			MPI_Recv(&data[lower], nrOfElem, MPI_INT, source, MPI_COMM_WORLD, &status);
+		}
+		finalSum+=mysum;
+		
+		printf("Sum is %d \n", finalSum);
+	}
+	
+	if(myrank > 0)
+	{
+		source = 0;
+		MPI_Recv(&data[lower], nrOfElem, MPI_INT, source, MPI_COMM_WORLD, &status);
+		for (int i = lower; i < upper; ++i)
+	        {
+		mysum += data[i];
+	        }
+
+                finalSum+=mysum;
+		
+		MPI_Send(&data[lower], nrOfElem, MPI_INT, 0 , MPI_COMM_WORLD);
+	}
+
+	MPI_Finalize();
+}
