@@ -1,0 +1,201 @@
+
+
+#include "stdafx.h"
+
+#include <iostream>
+
+#include <stdio.h> 
+
+#include <stdlib.h> 
+
+#include <mpi.h>
+
+#include <time.h>
+
+#define  MASTER 0
+
+#define  NRTASKS 4
+
+#define  SIZE 40
+
+#define  INF 99999 
+
+#define  VERTICES 4
+
+
+
+
+using namespace std;
+
+
+
+void rf(int(&destinatie)[NRTASKS][NRTASKS], int rank);
+
+
+
+void main(int argc, char *argv[])
+
+{
+
+	int size, myrank;
+
+	int source;
+
+
+
+	int destinatie[NRTASKS][NRTASKS];
+
+	int tempGrah[NRTASKS][NRTASKS];
+
+
+
+	MPI_Status status;
+
+	MPI_Init(&argc, &argv);
+
+	MPI_Comm_rank(MPI_COMM_WORLD, &myrank);
+
+	MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+
+
+
+
+	if (myrank == 0)
+	{
+		int graph[NRTASKS][NRTASKS] = { { 0,   5,  INFINITY, 10 },
+
+		{ INF, 0,   3, INF },
+
+		{ INF, INF, 0,   1 },
+
+		{ INF, INF, INF, 0 }
+
+		};
+
+
+
+		for (int i = 0; i < NRTASKS; ++i) {
+
+			for (int j = 0; j< NRTASKS; ++j) {
+
+				destinatie[i][j] = graph[i][j];
+
+			}
+
+		}
+
+		
+
+		rf(destinatie,myrank);
+
+		for (int processIndex = 1; processIndex < NRTASKS; ++processIndex) {
+
+			source = processIndex;
+
+
+
+			MPI_Send(&destinatie, NRTASKS*NRTASKS, MPI_INT, processIndex,MPI_COMM_WORLD);
+
+
+
+			printf("Master sent graph to process %d\n", processIndex);
+
+
+
+			MPI_Recv(&tempGrah, NRTASKS*NRTASKS, MPI_INT, source,MPI_COMM_WORLD, &status);
+
+
+
+			for (int i = 0; i < NRTASKS; ++i) {
+
+				for (int j = 0; j < NRTASKS; ++j) {
+
+					if (destinatie[i][j] > tempGrah[i][j]) {
+
+						destinatie[i][j] = tempGrah[i][j];
+
+					}
+
+				}
+
+			}
+
+
+
+		}
+
+
+
+		for (int i = 0; i < NRTASKS; ++i) {
+
+			for (int j= 0; j < NRTASKS; ++j) {
+
+				if (destinatie[i][j] < INF)
+
+					printf("%7d", destinatie[i][j]);
+
+				else
+
+					printf("%7s", "-1");
+
+			}
+
+			printf("\n");
+
+		}
+
+	}
+
+	else{
+
+		source = MASTER;
+
+		MPI_Recv(&destinatie, NRTASKS*NRTASKS, MPI_INT, source, MPI_COMM_WORLD, &status);
+
+
+
+		rf(destinatie, myrank);
+
+
+
+		for (int i = 0; i < NRTASKS; ++i) {
+
+			for (int j = 0; j < NRTASKS; ++j) {
+
+				tempGrah[i][j] = destinatie[i][j];
+
+			}
+
+		}
+
+		MPI_Send(&tempGrah, NRTASKS*NRTASKS, MPI_INT, MASTER,MPI_COMM_WORLD);
+
+
+	}
+
+	
+
+	MPI_Finalize();
+
+}
+
+
+
+void rf(int (&destinatie)[NRTASKS][NRTASKS],int rank) {
+
+	for (int i = 0; i < NRTASKS; ++i) {
+
+		for (int col = 0; col < NRTASKS; ++col) {
+
+			if (destinatie[i][rank] + destinatie[rank][col] < destinatie[i][col]) {
+
+				destinatie[i][col] = destinatie[i][rank] + destinatie[rank][col];
+
+			}
+
+		}
+
+	}
+
+}
